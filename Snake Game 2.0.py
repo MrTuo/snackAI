@@ -220,8 +220,26 @@ class snack_game:
         head_x,head_y=self.X[0][0]/10,self.X[0][1]/10
         self.init_G()
         path.DFS(head_x,head_y,self.G)
-        l2=path.create_shortst_path(head_x,head_y)
+        l=path.create_shortst_path(head_x,head_y)
         if self.have_path(head_x,head_y):
+            l2 = self.virtual_play_path()
+            if l2:
+                self.make_path_move(l)
+                self.get_random_food()
+                self.change_X()
+                self.init_G()
+            else :
+                self.target=1
+        else:
+            self.target=1
+
+        if self.target==1:
+            tail_x,tail_y=self.X[self.score+2][0]/10,self.X[self.score+2][1]/10#获取蛇尾坐标
+            path.DFS(tail_x,tail_y,self.G)
+            if self.have_path(tail_x,tail_y):
+                self.make_one_move(0)
+            else:
+                self.make_possible_move()
 
 
     def make_path_move(self,l):
@@ -231,9 +249,9 @@ class snack_game:
         :return:
         '''
 
-    def make_one_move(self,l):
+    def make_one_move(self,choice):
         '''
-        走出路径l的第一步，更新G
+        走出路径l的第一步，choice=0为最短路径第一步，choice=2为最长路径第一步。更新G
         :param l:
         :return:
         '''
