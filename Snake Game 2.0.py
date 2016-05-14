@@ -197,7 +197,7 @@ class snack_game:
     #自动游戏函数
     def init_G(self):
         '''
-        初始化G，
+        初始化G，food->0;snake->-1;empty->UNDEFINED
         :return:
         '''
         G = [[UNDEFINED for col in range(WD+1)] for row in range(HT+1)]
@@ -205,23 +205,50 @@ class snack_game:
         for i in self.X:
             G[i[0]/10][i[1]/10]=-1;
 
-    def virtual_create_path(self):
+    def virtual_play_path(self):
         '''
-        模拟到达食物，之后搜索蛇头到蛇尾是否有路径，有则返回路径l，否则返回空
+        模拟到达食物，产生l1，之后搜索蛇头到蛇尾是否有路径，有则返回l1，否则返回空
         :return:
         '''
-
         pass
+
     def AI_play(self):
+        '''
+        自动游戏主函数
+        :return:
+        '''
         head_x,head_y=self.X[0][0]/10,self.X[0][1]/10
         self.init_G()
         path.DFS(head_x,head_y,self.G)
         l2=path.create_shortst_path(head_x,head_y)
-        
+        if self.have_path(head_x,head_y):
 
 
+    def make_path_move(self,l):
+        '''
+        根据给定路径l，更新G
+        :param l:
+        :return:
+        '''
 
+    def make_one_move(self,l):
+        '''
+        走出路径l的第一步，更新G
+        :param l:
+        :return:
+        '''
 
+    def make_possible_move(self):
+        '''
+        在没有可选路径的时候，尝试走出一步，更新G
+        :return:
+        '''
+
+    def have_path(self,target_x,target_y):
+        '''
+        判断到目标位置是否有路
+        :return:true ：有路 ；false：无路
+        '''
 
     def main(self, mod):
 
