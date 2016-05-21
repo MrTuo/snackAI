@@ -90,8 +90,8 @@ class snake_game:
         随机生成食物的坐标，要求不能与蛇体重合。
         '''
         while 1:
-            self.food_x = random.randrange(BLOCK_SIZE, FIELD_WIDTH, BLOCK_SIZE)
-            self.food_y = random.randrange(BLOCK_SIZE, FIELD_HEIGHT, BLOCK_SIZE)
+            self.food_x = random.randrange(BLOCK_SIZE, FIELD_WIDTH + BLOCK_SIZE, BLOCK_SIZE)
+            self.food_y = random.randrange(BLOCK_SIZE, FIELD_HEIGHT+ BLOCK_SIZE, BLOCK_SIZE)
 
             food = [self.food_x,self.food_y];
             if not (food in self.X):
@@ -108,8 +108,11 @@ class snake_game:
                                  fill=SNAKE_COLOR, tags='snake' + str(self.head_tag))
         self.bg.delete('head')
         self.bg.create_rectangle(self.X[0][0], self.X[0][1], self.X[0][0] + BLOCK_SIZE, self.X[0][1] + BLOCK_SIZE,
-                                 fill=SNAKE_COLOR, tags="head")
-        if self.direct == "up" or self.direct == "down":
+                                 fill="black", tags="head")
+        self.bg.delete('tail')
+        self.bg.create_rectangle(self.X[-1][0], self.X[-1][1], self.X[-1][0] + BLOCK_SIZE, self.X[-1][1] + BLOCK_SIZE,
+                                 fill="red", tags="tail")
+        if self.direct == "up":
             self.bg.create_line(self.X[0][0], self.X[0][1] + BLOCK_SIZE, self.X[0][0] + BLOCK_SIZE, self.X[0][1] + BLOCK_SIZE,
                                  fill=SNAKE_COLOR, tags='snake' + str(self.head_tag))
         elif self.direct == "down":
@@ -251,8 +254,10 @@ class snake_game:
                 v_X.insert(0, [v_X[0][0] + BLOCK_SIZE, v_X[0][1]])
             elif step == -2:
                 v_X.insert(0, [v_X[0][0], v_X[0][1] - BLOCK_SIZE])
-            else :
+            elif step == 2:
                 v_X.insert(0, [v_X[0][0], v_X[0][1] + BLOCK_SIZE])
+            else:
+                print "direction wrong in make_one_move"
             if v_X[0][0] != self.food_x or v_X[0][1] != self.food_y:
                 v_X.pop();
             self.init_G(self.food_x/10,self.food_y/10, v_X, v_G)
@@ -263,6 +268,7 @@ class snake_game:
         tail_x, tail_y = v_X[-1][0] / 10, v_X[-1][1] / 10
         self.init_G(self.food_x/10,self.food_y/10, v_X, v_G)
         v_G[self.food_y/10][self.food_x/10]=-1;#暂时将食物变成蛇身
+        v_G[tail_y][tail_x]=0;
         path.DFS( tail_x,tail_y, v_G)
         if self.have_path(v_X[0][0]/10,v_X[0][1]/10, v_G):
             return l1
@@ -293,9 +299,10 @@ class snake_game:
             if target == 1:
                 tail_x, tail_y = self.X[-1][0] / 10, self.X[-1][1] / 10  # 获取蛇尾坐标
                 self.init_G(self.food_x/10,self.food_y/10, self.X,self.G)
-                self.G[self.food_y/10][self.food_x/10] = -1 #暂时将食物变成蛇身，在走向蛇尾时不能经过食物。
+                #self.G[self.food_y/10][self.food_x/10] = -1 #暂时将食物变成蛇身，在走向蛇尾时不能经过食物。
                 self.G[tail_y][tail_x] = 0 #将蛇尾变成食物
                 path.DFS(tail_x, tail_y, self.G)
+
                 if self.have_path(self.X[0][0]/10, self.X[0][1]/10, self.G):
                     step = self.make_one_move(self.G, self.X, 1)
                 else:
@@ -358,31 +365,33 @@ class snake_game:
         :return:
         '''
         #UNDEFINED-3即为吃满了所有空格
-        if self.score != UNDEFINED - 3:
-            if step == -1:
-                self.direct = "left"
-            elif step == 1:
-                self.direct="right"
-            elif step == -2:
-                self.direct="up"
-            elif step == 2:
-                self.direct="down"
-            else:
-                print "Direction error!"
-                exit(1)
-            self.change_X()
-            self.draw_snake()
-            self.is_eatten()
-            if self.eatten == True:
-                self.score += 1
-                self.get_random_food()
-                self.draw_food()
-                self.score_label()
-            self.is_dead()
-            # self.bg.after(self.speed)
-            self.bg.update()
+
+        if step == -1:
+            self.direct = "left"
+        elif step == 1:
+            self.direct="right"
+        elif step == -2:
+            self.direct="up"
+        elif step == 2:
+            self.direct="down"
         else:
-            self.draw_gameover()
+            print "Direction error!"
+            exit(1)
+        self.change_X()
+        self.draw_snake()
+        self.is_eatten()
+        if self.eatten == True:
+            self.score += 1
+            if self.score == UNDEFINED -3:
+                self.draw_gameover()
+                self.bg.after(10000000000)
+            self.get_random_food()
+            self.draw_food()
+            self.score_label()
+
+        self.is_dead()
+        # self.bg.after(self.speed)
+        self.bg.update()
 
 
     def make_possible_move(self):

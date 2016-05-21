@@ -11,7 +11,7 @@ Created on Thu Jan 15 09:55:43 2015
 # 得分label高度
 LABEL_HEIGHT = 40
 BLOCK_SIZE = 10# 像素大小
-# 游戏区域大小
+# 游戏区域大小(必须为20的整数倍)
 FIELD_HEIGHT = 100
 FIELD_WIDTH = 100
 
