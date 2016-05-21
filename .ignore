@@ -1,2 +1,4 @@
 .idea/
-*.pyc
+
+# Python:
+*.py[cod]
