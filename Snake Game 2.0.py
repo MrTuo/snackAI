@@ -7,54 +7,27 @@ Created on Thu Jan 15 09:55:43 2015
 from Tkinter import *
 import random
 import path
+import copy
+from settings import *
 
-# 窗口大小（所有大小必须为10的整数倍）
-WINDOW_HEIGHT = 400
-WINDOW_WIDTH = 600
+class snake_game:
 
-# 得分label高度
-LABEL_HEIGHT = 40
-
-# 游戏区域大小
-FIELD_HEIGHT = WINDOW_HEIGHT - LABEL_HEIGHT
-FIELD_WIDTH = WINDOW_WIDTH
-
-# 像素大小
-BLOCK_SIZE = 10
-
-# 蛇
-SNAKE_COLOR = "blue"
-# 墙
-WALL_COLOR = "red"
-# 食物
-FOOD_COLOR = "orange"
-
-#区域矩阵的行列数
-WD = FIELD_WIDTH/10
-HT=FIELD_HEIGHT/10
-
-UNDEFINED = WD*HT
-
-class snack_game:
     def __init__(self):
         # 属性：
         self.direct = "left"
         self.dead = False
         self.eatten = False
-        self.speed = 200
+        self.speed = 0
         # step_count用于统计蛇走过的步数，主要用于为每个蛇身小方块设置唯一的tag
         # 下面两个tag分别记录蛇头和蛇尾小方块的tag。
         self.step_conut = 0
         self.head_tag = 2
         self.tail_tag = 0
 
-        # 随机生成食物的坐标(生成在窗口的上半部分)
-        self.food_x = random.randrange(
-            BLOCK_SIZE, FIELD_WIDTH - BLOCK_SIZE * 2, BLOCK_SIZE)
-        self.food_y = random.randrange(BLOCK_SIZE, FIELD_HEIGHT / 2 - BLOCK_SIZE, BLOCK_SIZE)
-        # 随机生成蛇头坐标（生成在窗口的下半部分,靠右5步，不然一出来就死了OTZ）
-        self.snack_x = random.randrange(BLOCK_SIZE * 5, FIELD_WIDTH - BLOCK_SIZE * 5, BLOCK_SIZE)
-        self.snack_y = random.randrange(FIELD_HEIGHT / 2, FIELD_HEIGHT - BLOCK_SIZE, BLOCK_SIZE)
+        self.food_x=FIELD_WIDTH - 3 * BLOCK_SIZE
+        self.food_y=FIELD_HEIGHT -3 * BLOCK_SIZE
+
+        self.snake_x = self.snake_y = 3 * BLOCK_SIZE
         # 分数
         self.score = 0
         # 蛇身长度
@@ -63,73 +36,103 @@ class snack_game:
         self.X = [[0, 0]] * 3
 
         for i in range(3):
-            self.X[i] = [self.snack_x + BLOCK_SIZE * i, self.snack_y]
+            self.X[i] = [self.snake_x + BLOCK_SIZE * i, self.snake_y]
 
         '''
         G记录整个游戏区域矩阵，保存的数据为空区域为0，蛇身区域为-1,
         生成到目标地点路径后，目标区域为0,其余区域除蛇身外均为到0的最短距离，蛇身为-1
         '''
-        self.G=[[0 for col in range(WD+1)] for row in range(HT+1)]
+        self.G = [[0 for col in range(WD + 1)] for row in range(HT + 1)]
+
+        # 初始化开始界面
+        self.window = Tk()
+        self.window.geometry()
+        self.window.maxsize(WINDOW_WIDTH, WINDOW_HEIGHT)
+        self.window.minsize(WINDOW_WIDTH, WINDOW_HEIGHT)
+        self.window.title("Snake game")
+
+        self.frame1 = Frame(self.window, relief=GROOVE)
+        self.frame2 = Frame(self.window, relief=RAISED, height=LABEL_HEIGHT, width=WINDOW_WIDTH)
+        self.bg = Canvas(self.frame1, width=WINDOW_WIDTH, height=WINDOW_HEIGHT - LABEL_HEIGHT, bg="white")
+
+        self.label = Label(self.frame2, text="Score: " + str(self.score))
+
+        self.frame1.pack()
+        self.frame2.pack(fill=BOTH)
+        self.label.pack(side=LEFT)
+        self.bg.pack(fill=BOTH)
+        self.bg.bind('<Key>', self.control)
+        self.bg.focus_set()
+        self.draw_wall()
+        # 初始化蛇
+        for i in xrange(3):
+            self.snake = self.bg.create_rectangle(
+                self.X[i][0], self.X[i][1], self.X[i][0] + BLOCK_SIZE, self.X[i][1] + BLOCK_SIZE, fill=SNAKE_COLOR,
+                tags='snake' + str(2 - i))
+
+        self.draw_food()
+        self.score_label()
 
     '''View 模块'''
 
     def draw_wall(self):
         # 左方墙
-        self.bg.create_rectangle(0, 0, BLOCK_SIZE, FIELD_HEIGHT, fill=WALL_COLOR, tags="wall")
+        self.bg.create_rectangle(0, 0, BLOCK_SIZE, FIELD_HEIGHT + BLOCK_SIZE, fill=WALL_COLOR, tags="wall")
         # 右方墙
-        self.bg.create_rectangle(FIELD_WIDTH - BLOCK_SIZE, 0, FIELD_WIDTH, FIELD_HEIGHT, fill=WALL_COLOR, tags="wall")
+        self.bg.create_rectangle(FIELD_WIDTH + BLOCK_SIZE, 0, FIELD_WIDTH + 2 * BLOCK_SIZE, FIELD_HEIGHT+ 2 * BLOCK_SIZE, fill=WALL_COLOR, tags="wall")
         # 上方墙
-        self.bg.create_rectangle(0, 0, FIELD_WIDTH, BLOCK_SIZE, fill=WALL_COLOR, tags="wall")
+        self.bg.create_rectangle(0, 0, FIELD_WIDTH + BLOCK_SIZE, BLOCK_SIZE, fill=WALL_COLOR, tags="wall")
         # 下方墙
-        self.bg.create_rectangle(0, FIELD_HEIGHT - BLOCK_SIZE, FIELD_WIDTH, FIELD_HEIGHT, fill=WALL_COLOR, tags="wall")
+        self.bg.create_rectangle(0, FIELD_HEIGHT + BLOCK_SIZE, FIELD_WIDTH + 2* BLOCK_SIZE, FIELD_HEIGHT+ 2* BLOCK_SIZE, fill=WALL_COLOR, tags="wall")
 
     def get_random_food(self):
         '''
-        随机生成食物的坐标，要求不能与蛇体重合。（待优化，后期会很慢）
+        随机生成食物的坐标，要求不能与蛇体重合。
         '''
-        valid = 1
-        while valid == 1:
-            self.food_x = random.randrange(BLOCK_SIZE, FIELD_WIDTH - 2 * BLOCK_SIZE, BLOCK_SIZE)
-            self.food_y = random.randrange(BLOCK_SIZE, FIELD_HEIGHT - 2 * BLOCK_SIZE, BLOCK_SIZE)
-            for i in self.X:
-                if self.food_x == i[0] and self.food_y == i[1]:
-                    valid = 1
-                    break
-            valid = 0
+        while 1:
+            self.food_x = random.randrange(BLOCK_SIZE, FIELD_WIDTH, BLOCK_SIZE)
+            self.food_y = random.randrange(BLOCK_SIZE, FIELD_HEIGHT, BLOCK_SIZE)
+
+            food = [self.food_x,self.food_y];
+            if not (food in self.X):
+                break;
 
     def draw_food(self):
         self.bg.delete("food")
         self.food = self.bg.create_rectangle(
             self.food_x, self.food_y, self.food_x + BLOCK_SIZE, self.food_y + BLOCK_SIZE, fill=FOOD_COLOR, tags="food")
 
-    def draw_snack(self):
+    def draw_snake(self):
         self.bg.delete('snake' + str(self.tail_tag - 1))
-        '''
-        for i in self.X:
-            self.snack = self.bg.create_rectangle(
-                i[0], i[1], i[0] + BLOCK_SIZE, i[1] + BLOCK_SIZE, fill=SNAKE_COLOR, tags="snack")
-        '''
         self.bg.create_rectangle(self.X[0][0], self.X[0][1], self.X[0][0] + BLOCK_SIZE, self.X[0][1] + BLOCK_SIZE,
+                                 fill=SNAKE_COLOR, tags='snake' + str(self.head_tag))
+        self.bg.delete('head')
+        self.bg.create_rectangle(self.X[0][0], self.X[0][1], self.X[0][0] + BLOCK_SIZE, self.X[0][1] + BLOCK_SIZE,
+                                 fill=SNAKE_COLOR, tags="head")
+        if self.direct == "up" or self.direct == "down":
+            self.bg.create_line(self.X[0][0], self.X[0][1] + BLOCK_SIZE, self.X[0][0] + BLOCK_SIZE, self.X[0][1] + BLOCK_SIZE,
+                                 fill=SNAKE_COLOR, tags='snake' + str(self.head_tag))
+        elif self.direct == "down":
+            self.bg.create_line(self.X[0][0], self.X[0][1], self.X[0][0] + BLOCK_SIZE, self.X[0][1],
+                                 fill=SNAKE_COLOR, tags='snake' + str(self.head_tag))
+        elif self.direct == "right":
+            self.bg.create_line(self.X[0][0], self.X[0][1], self.X[0][0], self.X[0][1] + BLOCK_SIZE,
+                                 fill=SNAKE_COLOR, tags='snake' + str(self.head_tag))
+        else:
+            self.bg.create_line(self.X[0][0] + BLOCK_SIZE, self.X[0][1], self.X[0][0] + BLOCK_SIZE, self.X[0][1] + BLOCK_SIZE,
                                  fill=SNAKE_COLOR, tags='snake' + str(self.head_tag))
 
     def score_label(self):
         self.label.destroy()
-        if self.eatten == True:
-            self.score += 10
-
         self.label = Label(self.frame2, text="Score: " + str(self.score))
         self.label.pack()
 
     def draw_gameover(self):
-        self.bg.delete("snack")
+        self.bg.delete("snake")
         self.bg.delete("food")
         self.over = self.bg.create_text((FIELD_WIDTH / 2 - BLOCK_SIZE * 2, FIELD_WIDTH / 3 + 2 * BLOCK_SIZE),
                                         text="           Game Over!\n         Your score is "
                                              + str(self.score) + "\n\n", font='Helvetica -30 bold')
-
-    #                                    +"Press \"Enter \"to continue.\n"\
-    #                                    +"      Press \"Esc\" to exit."
-    #
 
     '''Module 模块'''
 
@@ -140,8 +143,8 @@ class snack_game:
 
     def is_dead(self):
         self.dead = False
-        if (self.X[0][0] not in range(BLOCK_SIZE, FIELD_WIDTH - 2 * BLOCK_SIZE + 1)) or (
-            self.X[0][1] not in range(BLOCK_SIZE, FIELD_HEIGHT - 2 * BLOCK_SIZE + 1)):
+        if (self.X[0][0] not in range(BLOCK_SIZE, FIELD_WIDTH + 1)) or (
+                    self.X[0][1] not in range(BLOCK_SIZE, FIELD_HEIGHT + 1)):
             self.dead = True
         else:
             for i in range(1, self.head_tag - self.tail_tag + 1):
@@ -164,8 +167,6 @@ class snack_game:
             self.X.pop()
         self.head_tag += 1
 
-
-
     '''Control 模块'''
 
     def control(self, event):
@@ -185,134 +186,248 @@ class snack_game:
             self.speed += 25
 
     '''自动游戏&手动游戏'''
-    #手动游戏函数
+    # 手动游戏函数
     def normal_play(self):
-        self.change_X()
-        self.draw_snack()
-        self.is_eatten()
-        if self.eatten == True:
-            self.get_random_food()
-            self.draw_food()
+        G = [[UNDEFINED for col in range(WD + 1)] for row in range(HT + 1)]
+        for i in range(2, HT/2):
+            G[i][5] = -1
+        for i in range(2, WD/2):
+            G[2][i] = -1
+            G[4][i] = -1
+        tag = [[0 for col in range(WD + 1)] for row in range(HT + 1)]
+        while self.dead == False:
+            for i in range(1, 200):
+                G = path.DFS(10, 10, G)
+            self.change_X()
+            self.draw_snake()
+            self.is_eatten()
+            if self.eatten == True:
+                self.get_random_food()
+                self.draw_food()
+                self.score_label()
+            self.is_dead()
+            # self.bg.after(self.speed)
+            self.bg.update()
+        else:
+            self.draw_gameover()
 
-    #自动游戏函数
-    def init_G(self):
+    # 自动游戏函数
+
+    def init_G(self,target_x,target_y,snake,G):
         '''
         初始化G，food->0;snake->-1;empty->UNDEFINED
         :return:
         '''
-        G = [[UNDEFINED for col in range(WD+1)] for row in range(HT+1)]
-        G[self.food_x][self.food_y]=0;
-        for i in self.X:
-            G[i[0]/10][i[1]/10]=-1;
+        for i in xrange(WD+1):
+            for j in xrange(HT+1):
+                G[j][i]=UNDEFINED
+        #食物位置置0
+        G[target_y][target_x] = 0;
+        #蛇身位置置-1
+        for i in snake:
+            if (i[1]/10>=1 and i[1]/10<=HT and i[0]/10>=1 and i[0]/10<=WD):
+                G[i[1] / 10][i[0] / 10] = -1
+            else:
+                pass
 
     def virtual_play_path(self):
         '''
         模拟到达食物，产生l1，之后搜索蛇头到蛇尾是否有路径，有则返回l1，否则返回空
         :return:
         '''
-        pass
+        # 下面两个变量保存虚拟游戏的两个信息
+        v_G = copy.deepcopy(self.G)
+        v_X = self.X[:]
+
+        l1 = []
+        # 还没有吃到食物
+        while v_X[0][0] != self.food_x or v_X[0][1] != self.food_y:
+            # 走出一步，加入到l1，更新G
+            step=self.make_one_move(v_G, v_X, 0)
+            l1.append(step)
+            if step == -1:#修改虚拟蛇身数组
+                v_X.insert(0, [v_X[0][0] - BLOCK_SIZE, v_X[0][1]])
+            elif step == 1:
+                v_X.insert(0, [v_X[0][0] + BLOCK_SIZE, v_X[0][1]])
+            elif step == -2:
+                v_X.insert(0, [v_X[0][0], v_X[0][1] - BLOCK_SIZE])
+            else :
+                v_X.insert(0, [v_X[0][0], v_X[0][1] + BLOCK_SIZE])
+            if v_X[0][0] != self.food_x or v_X[0][1] != self.food_y:
+                v_X.pop();
+            self.init_G(self.food_x/10,self.food_y/10, v_X, v_G)
+            path.DFS(self.food_x/10,self.food_y/10,  v_G)
+
+        # 此时已经到达食物位置
+        # 获取蛇尾坐标
+        tail_x, tail_y = v_X[-1][0] / 10, v_X[-1][1] / 10
+        self.init_G(self.food_x/10,self.food_y/10, v_X, v_G)
+        v_G[self.food_y/10][self.food_x/10]=-1;#暂时将食物变成蛇身
+        path.DFS( tail_x,tail_y, v_G)
+        if self.have_path(v_X[0][0]/10,v_X[0][1]/10, v_G):
+            return l1
+        else:
+            return []
 
     def AI_play(self):
         '''
         自动游戏主函数
         :return:
         '''
-        head_x,head_y=self.X[0][0]/10,self.X[0][1]/10
-        self.init_G()
-        path.DFS(head_x,head_y,self.G)
-        l=path.create_shortst_path(head_x,head_y)
-        if self.have_path(head_x,head_y):
-            l2 = self.virtual_play_path()
-            if l2:
-                self.make_path_move(l)
-                self.get_random_food()
-                self.change_X()
-                self.init_G()
-            else :
-                self.target=1
-        else:
-            self.target=1
+        #head_x, head_y = self.X[0][0] / 10, self.X[0][1] / 10
+        self.G = [[UNDEFINED for col in range(WD + 1)] for row in range(HT + 1)]
 
-        if self.target==1:
-            tail_x,tail_y=self.X[self.score+2][0]/10,self.X[self.score+2][1]/10#获取蛇尾坐标
-            path.DFS(tail_x,tail_y,self.G)
-            if self.have_path(tail_x,tail_y):
-                self.make_one_move(0)
+        while (not self.is_dead()):
+            target = 0
+            self.init_G(self.food_x/10,self.food_y/10, self.X,self.G)
+            path.DFS( self.food_x/10,self.food_y/10, self.G)
+            if self.have_path(self.X[0][0]/10, self.X[0][1]/10,self.G):
+                l2 = self.virtual_play_path()
+                if l2:
+                    self.make_path_move(l2)
+                else:
+                    target = 1
             else:
-                self.make_possible_move()
+                target = 1
 
+            if target == 1:
+                tail_x, tail_y = self.X[-1][0] / 10, self.X[-1][1] / 10  # 获取蛇尾坐标
+                self.init_G(self.food_x/10,self.food_y/10, self.X,self.G)
+                self.G[self.food_y/10][self.food_x/10] = -1 #暂时将食物变成蛇身，在走向蛇尾时不能经过食物。
+                self.G[tail_y][tail_x] = 0 #将蛇尾变成食物
+                path.DFS(tail_x, tail_y, self.G)
+                if self.have_path(self.X[0][0]/10, self.X[0][1]/10, self.G):
+                    step = self.make_one_move(self.G, self.X, 1)
+                else:
 
-    def make_path_move(self,l):
+                    step = self.make_possible_move()
+                self.move_UI(step)
+
+    def make_path_move(self, l):
         '''
-        根据给定路径l，更新G
+        根据给定路径l，l中为-1, 1 , -2, 2;其中-1代表左；1代表右；-2代表下；2代表上
+        更新G，更新蛇身数组
         :param l:
         :return:
         '''
+        for step in l:
+            if not self.is_dead():
+                self.move_UI(step)
 
-    def make_one_move(self,choice):
+    def make_one_move(self, G, snake, choice):
         '''
-        走出路径l的第一步，choice=0为最短路径第一步，choice=2为最长路径第一步。更新G
+        走出路径l的第一步，choice=0为最短路径第一步，choice=1为最长路径第一步。返回这一步，其中-1代表左；1代表右；-2代表下；2代表上
         :param l:
         :return:
         '''
+        direct = 0
+        if choice == 0:
+            min = UNDEFINED
+            if path.is_free(snake[0][0]/BLOCK_SIZE - 1,snake[0][1]/BLOCK_SIZE,G) and (G[snake[0][1]/BLOCK_SIZE][snake[0][0]/BLOCK_SIZE - 1] < min):
+                direct = -1
+                min = G[snake[0][1]/BLOCK_SIZE][snake[0][0]/BLOCK_SIZE - 1]
+            if path.is_free(snake[0][0]/BLOCK_SIZE + 1,snake[0][1]/BLOCK_SIZE,G) and G[snake[0][1]/BLOCK_SIZE][snake[0][0]/BLOCK_SIZE + 1] < min:
+                direct = 1
+                min = G[snake[0][1]/BLOCK_SIZE][snake[0][0]/BLOCK_SIZE + 1]
+            if path.is_free(snake[0][0]/BLOCK_SIZE,snake[0][1]/BLOCK_SIZE - 1,G) and G[snake[0][1]/BLOCK_SIZE - 1][snake[0][0]/BLOCK_SIZE] < min:
+                direct = -2
+                min = G[snake[0][1]/BLOCK_SIZE-1][snake[0][0]/BLOCK_SIZE]
+            if path.is_free(snake[0][0]/BLOCK_SIZE,snake[0][1]/BLOCK_SIZE + 1,G) and G[snake[0][1]/BLOCK_SIZE + 1][snake[0][0]/BLOCK_SIZE] < min:
+                direct = 2
+                min = G[snake[0][1]/BLOCK_SIZE+1][snake[0][0]/BLOCK_SIZE]
+        else:
+            max = -1
+            if path.is_free(snake[0][0]/BLOCK_SIZE - 1,snake[0][1]/BLOCK_SIZE,G) and G[snake[0][1]/BLOCK_SIZE][snake[0][0]/BLOCK_SIZE - 1] > max and G[snake[0][1]/BLOCK_SIZE][snake[0][0]/BLOCK_SIZE - 1] < UNDEFINED:
+                direct = -1
+                max = G[snake[0][1]/BLOCK_SIZE][snake[0][0]/BLOCK_SIZE - 1]
+            if path.is_free(snake[0][0]/BLOCK_SIZE + 1,snake[0][1]/BLOCK_SIZE,G) and G[snake[0][1]/BLOCK_SIZE][snake[0][0]/BLOCK_SIZE + 1] > max and G[snake[0][1]/BLOCK_SIZE][snake[0][0]/BLOCK_SIZE + 1] < UNDEFINED:
+                direct = 1
+                max = G[snake[0][1]/BLOCK_SIZE][snake[0][0]/BLOCK_SIZE + 1]
+            if path.is_free(snake[0][0]/BLOCK_SIZE,snake[0][1]/BLOCK_SIZE - 1,G) and G[snake[0][1]/BLOCK_SIZE - 1][snake[0][0]/BLOCK_SIZE] > max and G[snake[0][1]/BLOCK_SIZE - 1][snake[0][0]/BLOCK_SIZE] < UNDEFINED:
+                direct = -2
+                max = G[snake[0][1]/BLOCK_SIZE-1][snake[0][0]/BLOCK_SIZE]
+            if path.is_free(snake[0][0]/BLOCK_SIZE,snake[0][1]/BLOCK_SIZE + 1,G) and G[snake[0][1]/BLOCK_SIZE + 1][snake[0][0]/BLOCK_SIZE] > max and G[snake[0][1]/BLOCK_SIZE + 1][snake[0][0]/BLOCK_SIZE] < UNDEFINED:
+                direct = 2
+                max = G[snake[0][1]/BLOCK_SIZE+1][snake[0][0]/BLOCK_SIZE]
+        return direct
 
-    def make_possible_move(self):
+    def move_UI(self,step):
         '''
-        在没有可选路径的时候，尝试走出一步，更新G
+        根据step更新蛇身数组，在UI中画出新的蛇，判断是否吃到食物，迟到则更新分数，产生新的食物并画出。
+        :param step:
         :return:
         '''
-
-    def have_path(self,target_x,target_y):
-        '''
-        判断到目标位置是否有路
-        :return:true ：有路 ；false：无路
-        '''
-
-    def main(self, mod):
-
-        self.window = Tk()
-        self.window.geometry()
-        self.window.maxsize(WINDOW_WIDTH, WINDOW_HEIGHT)
-        self.window.minsize(WINDOW_WIDTH, WINDOW_HEIGHT)
-        self.window.title("Snake game")
-
-        self.frame1 = Frame(self.window, relief=GROOVE)
-        self.frame2 = Frame(self.window, relief=RAISED, height=LABEL_HEIGHT, width=WINDOW_WIDTH)
-        self.bg = Canvas(self.frame1, width=WINDOW_WIDTH, height=WINDOW_HEIGHT - LABEL_HEIGHT, bg="white")
-
-        self.label = Label(self.frame2, text="Score: " + str(self.score))
-
-        self.frame1.pack()
-        self.frame2.pack(fill=BOTH)
-        self.label.pack(side=LEFT)
-        self.bg.pack(fill=BOTH)
-        self.bg.bind('<Key>', self.control)
-        self.bg.focus_set()
-        self.draw_wall()
-        # self.draw_food()
-        # 初始化蛇
-        for i in xrange(3):
-            self.snack = self.bg.create_rectangle(
-                self.X[i][0], self.X[i][1], self.X[i][0] + BLOCK_SIZE, self.X[i][1] + BLOCK_SIZE, fill=SNAKE_COLOR,
-                tags='snake' + str(2 - i))
-
-        self.draw_food()
-        while self.dead == False:
-            if mod == 1:
-                self.normal_play()
-            elif mod == 2:
-                self.AI_play()
-
-            self.score_label()
+        #UNDEFINED-3即为吃满了所有空格
+        if self.score != UNDEFINED - 3:
+            if step == -1:
+                self.direct = "left"
+            elif step == 1:
+                self.direct="right"
+            elif step == -2:
+                self.direct="up"
+            elif step == 2:
+                self.direct="down"
+            else:
+                print "Direction error!"
+                exit(1)
+            self.change_X()
+            self.draw_snake()
+            self.is_eatten()
+            if self.eatten == True:
+                self.score += 1
+                self.get_random_food()
+                self.draw_food()
+                self.score_label()
             self.is_dead()
-
-            self.bg.after(self.speed)
+            # self.bg.after(self.speed)
             self.bg.update()
         else:
             self.draw_gameover()
 
+
+    def make_possible_move(self):
+        '''
+        在没有可选路径的时候，尝试走出一步，返回这一步
+        :return:
+        '''
+        snake = self.X[:]
+        G=copy.deepcopy(self.G)
+        min = UNDEFINED
+        direct = 0
+        if path.is_free(snake[0][0]/BLOCK_SIZE - 1,snake[0][1]/BLOCK_SIZE,G):
+            direct = -1
+            min = G[snake[0][1]/BLOCK_SIZE][snake[0][0]/BLOCK_SIZE - 1]
+        elif path.is_free(snake[0][0]/BLOCK_SIZE + 1,snake[0][1]/BLOCK_SIZE,G):
+            direct = 1
+            min = G[snake[0][1]/BLOCK_SIZE][snake[0][0]/BLOCK_SIZE + 1]
+        elif path.is_free(snake[0][0]/BLOCK_SIZE,snake[0][1]/BLOCK_SIZE - 1,G):
+            direct = -2
+            min = G[snake[0][1]/BLOCK_SIZE - 1][snake[0][0]/BLOCK_SIZE]
+        elif path.is_free(snake[0][0]/BLOCK_SIZE,snake[0][1]/BLOCK_SIZE + 1,G):
+            direct = 2
+            min = G[snake[0][1]/BLOCK_SIZE +1][snake[0][0]/BLOCK_SIZE]
+        return direct
+
+    def have_path(self, target_x, target_y,G):
+        '''
+        判断到目标位置是否有路
+        :return:true ：有路 ；false：无路
+        '''
+        if (path.is_free(target_x-1,target_y,G) and G[target_y][target_x - 1]<UNDEFINED) or (path.is_free(target_x+1,target_y,G) and G[target_y][target_x + 1]<UNDEFINED) or (path.is_free(target_x,target_y -1,G) and G[target_y-1][target_x]<UNDEFINED) or (path.is_free(target_x,target_y+1,G) and G[target_y+1][target_x]<UNDEFINED):
+            return True
+        else:
+            return False
+
+    def main(self, mod):
+        if mod == 1:
+            self.normal_play()
+        elif mod == 2:
+            self.AI_play()
+
         self.window.mainloop()
 
 
-snack_game = snack_game()
-snack_game.main(1)
+if __name__ == '__main__':
+    snake_game = snake_game()
+    #这里接受的参数为游戏模式（1为手动模式，2为AI模式）:
+    snake_game.main(2)
