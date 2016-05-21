@@ -435,7 +435,6 @@ class snake_game:
 
         self.window.mainloop()
 
-
 if __name__ == '__main__':
     snake_game = snake_game()
     #这里接受的参数为游戏模式（1为手动模式，2为AI模式）:
