@@ -320,6 +320,17 @@ class snake_game:
         for step in l:
             if not self.is_dead():
                 self.move_UI(step)
+    def get_max_around(self,x,y,G):
+        max = -1
+        if path.is_free(x - 1,y,G) and G[y][x - 1] > max and G[y][x - 1] < UNDEFINED:
+            max = G[y][x - 1]
+        if path.is_free(x + 1,y,G) and G[y][x + 1] > max and G[y][x + 1] < UNDEFINED:
+            max = G[y][x + 1]
+        if path.is_free(x,y - 1,G) and G[y - 1][x] > max and G[y - 1][x] < UNDEFINED:
+            max = G[y-1][x]
+        if path.is_free(x,y + 1,G) and G[y + 1][x] > max and G[y + 1][x] < UNDEFINED:
+            max = G[y+1][x]
+        return max
 
     def make_one_move(self, G, x,y, choice):
         '''
@@ -343,19 +354,31 @@ class snake_game:
                 direct = 2
                 min = G[y+1][x]
         else:
-            max = -1
-            if path.is_free(x - 1,y,G) and G[y][x - 1] > max and G[y][x - 1] < UNDEFINED:
-                direct = -1
-                max = G[y][x - 1]
-            if path.is_free(x + 1,y,G) and G[y][x + 1] > max and G[y][x + 1] < UNDEFINED:
-                direct = 1
-                max = G[y][x + 1]
+            max = -2
+            temp_G = copy.deepcopy(G)
+            temp_max2 = max2 = -2
+            if path.is_free(x - 1,y,G) and G[y][x - 1] >= max and G[y][x - 1] < UNDEFINED:
+                temp_max2 = self.get_max_around(x-1,y,G)
+                if G[y][x-1] > max or (G[y][x-1]==max and temp_max2 > max2):
+                    direct = -1
+                    max = G[y][x - 1]
+                    max2 = temp_max2
+            if path.is_free(x + 1,y,G) and G[y][x + 1] >= max and G[y][x + 1] < UNDEFINED:
+                temp_max2 = self.get_max_around(x+1,y,G)
+                if G[y][x+1] > max or (G[y][x+1]==max and temp_max2 > max2):
+                    direct = 1
+                    max = G[y][x + 1]
+                    max2 = temp_max2
             if path.is_free(x,y - 1,G) and G[y - 1][x] > max and G[y - 1][x] < UNDEFINED:
-                direct = -2
-                max = G[y-1][x]
+                temp_max2 = self.get_max_around(x,y-1,G)
+                if G[y-1][x] > max or (G[y-1][x]==max and temp_max2 > max2):
+                    direct = -2
+                    max = G[y-1][x]
+                    max2 = temp_max2
             if path.is_free(x,y + 1,G) and G[y + 1][x] > max and G[y + 1][x] < UNDEFINED:
-                direct = 2
-                max = G[y+1][x]
+                temp_max2 = self.get_max_around(x+1,y,temp_G)
+                if G[y+1][x] > max or (G[y+1][x]==max and temp_max2 > max2):
+                    direct = 2
         return direct
 
     def move_UI(self,step):
