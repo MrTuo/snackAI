@@ -165,6 +165,8 @@ class snake_game:
             self.X.insert(0, [self.X[0][0] + BLOCK_SIZE, self.X[0][1]])
         elif self.direct == 'down':
             self.X.insert(0, [self.X[0][0], self.X[0][1] + BLOCK_SIZE])
+
+        self.is_eatten()
         if self.eatten == False:
             self.tail_tag += 1
             self.X.pop()
@@ -299,15 +301,14 @@ class snake_game:
             if target == 1:
                 tail_x, tail_y = self.X[-1][0] / 10, self.X[-1][1] / 10  # 获取蛇尾坐标
                 self.init_G(self.food_x/10,self.food_y/10, self.X,self.G)
-                #self.G[self.food_y/10][self.food_x/10] = -1 #暂时将食物变成蛇身，在走向蛇尾时不能经过食物。
+                self.G[self.food_y/10][self.food_x/10] = -1 #暂时将食物变成蛇身，在走向蛇尾时不能经过食物。
                 self.G[tail_y][tail_x] = 0 #将蛇尾变成食物
                 path.DFS(tail_x, tail_y, self.G)
 
                 if self.have_path(self.X[0][0]/10, self.X[0][1]/10, self.G):
                     step = self.make_one_move(self.G, self.X[0][0]/BLOCK_SIZE,self.X[0][1]/BLOCK_SIZE, 1)
                 else:
-
-                    step = self.make_possible_move(self.X[0][0]/BLOCK_SIZE,self.X[0][1]/BLOCK_SIZE)
+                    "Error!"
                 self.move_UI(step)
 
     def make_path_move(self, l):
@@ -416,30 +417,6 @@ class snake_game:
         self.is_dead()
         # self.bg.after(self.speed)
         self.bg.update()
-
-
-    def make_possible_move(self,x,y):
-        '''
-        在没有可选路径的时候，尝试走出一步，返回这一步
-        :return:
-        '''
-        snake = self.X[:]
-        G=copy.deepcopy(self.G)
-        min = UNDEFINED
-        direct = 0
-        if path.is_free(x - 1,y,G):
-            direct = -1
-            min = G[y][x - 1]
-        elif path.is_free(x + 1,y,G):
-            direct = 1
-            min = G[y][x + 1]
-        elif path.is_free(x,y - 1,G):
-            direct = -2
-            min = G[y - 1][x]
-        elif path.is_free(x,y + 1,G):
-            direct = 2
-            min = G[y +1][x]
-        return direct
 
     def have_path(self, target_x, target_y,G):
         '''
