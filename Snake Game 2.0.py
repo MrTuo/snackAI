@@ -325,7 +325,7 @@ class snake_game:
         max = -1
         if path.is_free(x - 1,y,G) and G[y][x - 1] > max and G[y][x - 1] < UNDEFINED:
             direct = -1
-            max = G[x][snake[0][0]/BLOCK_SIZE - 1]
+            max = G[y][x - 1]
         if path.is_free(x + 1,y,G) and G[y][x + 1] > max and G[y][x + 1] < UNDEFINED:
             direct = 1
             max = G[y][x + 1]
@@ -362,7 +362,7 @@ class snake_game:
             max = -1
             if path.is_free(x - 1,y,G) and G[y][x - 1] > max and G[y][x - 1] < UNDEFINED:
                 direct = -1
-            max = G[x][snake[0][0]/BLOCK_SIZE - 1]
+            max = G[y][x - 1]
             if path.is_free(x + 1,y,G) and G[y][x + 1] > max and G[y][x + 1] < UNDEFINED:
                 direct = 1
                 max = G[y][x + 1]
