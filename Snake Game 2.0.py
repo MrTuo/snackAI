@@ -330,7 +330,7 @@ class snake_game:
         direct = 0
         if choice == 0:
             min = UNDEFINED
-            if path.is_free(snake[0][0]/BLOCK_SIZE - 1,snake[0][1]/BLOCK_SIZE,G) and G[snake[0][1]/BLOCK_SIZE][snake[0][0]/BLOCK_SIZE - 1] < min:
+            if path.is_free(snake[0][0]/BLOCK_SIZE - 1,snake[0][1]/BLOCK_SIZE,G) and (G[snake[0][1]/BLOCK_SIZE][snake[0][0]/BLOCK_SIZE - 1] < min):
                 direct = -1
                 min = G[snake[0][1]/BLOCK_SIZE][snake[0][0]/BLOCK_SIZE - 1]
             if path.is_free(snake[0][0]/BLOCK_SIZE + 1,snake[0][1]/BLOCK_SIZE,G) and G[snake[0][1]/BLOCK_SIZE][snake[0][0]/BLOCK_SIZE + 1] < min:
