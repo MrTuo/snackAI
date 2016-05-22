@@ -246,7 +246,7 @@ class snake_game:
         # 还没有吃到食物
         while v_X[0][0] != self.food_x or v_X[0][1] != self.food_y:
             # 走出一步，加入到l1，更新G
-            step=self.make_one_move(v_G, v_X, 0)
+            step=self.make_one_move(v_G, v_X[0][0]/BLOCK_SIZE,v_X[0][1]/BLOCK_SIZE, 0)
             l1.append(step)
             if step == -1:#修改虚拟蛇身数组
                 v_X.insert(0, [v_X[0][0] - BLOCK_SIZE, v_X[0][1]])
@@ -260,17 +260,17 @@ class snake_game:
                 print "direction wrong in make_one_move"
             if v_X[0][0] != self.food_x or v_X[0][1] != self.food_y:
                 v_X.pop();
-            self.init_G(self.food_x/10,self.food_y/10, v_X, v_G)
-            path.DFS(self.food_x/10,self.food_y/10,  v_G)
+            self.init_G(self.food_x/BLOCK_SIZE,self.food_y/BLOCK_SIZE, v_X, v_G)
+            path.DFS(self.food_x/BLOCK_SIZE,self.food_y/BLOCK_SIZE,  v_G)
 
         # 此时已经到达食物位置
         # 获取蛇尾坐标
-        tail_x, tail_y = v_X[-1][0] / 10, v_X[-1][1] / 10
+        tail_x, tail_y = v_X[-1][0] /BLOCK_SIZE, v_X[-1][1] /BLOCK_SIZE
         self.init_G(self.food_x/10,self.food_y/10, v_X, v_G)
         v_G[self.food_y/10][self.food_x/10]=-1;#暂时将食物变成蛇身
         v_G[tail_y][tail_x]=0;
         path.DFS( tail_x,tail_y, v_G)
-        if self.have_path(v_X[0][0]/10,v_X[0][1]/10, v_G):
+        if self.have_path(v_X[0][0]/BLOCK_SIZE,v_X[0][1]/BLOCK_SIZE, v_G):
             return l1
         else:
             return []
@@ -287,7 +287,7 @@ class snake_game:
             target = 0
             self.init_G(self.food_x/10,self.food_y/10, self.X,self.G)
             path.DFS( self.food_x/10,self.food_y/10, self.G)
-            if self.have_path(self.X[0][0]/10, self.X[0][1]/10,self.G):
+            if self.have_path(self.X[0][0]/BLOCK_SIZE, self.X[0][1]/BLOCK_SIZE,self.G):
                 l2 = self.virtual_play_path()
                 if l2:
                     self.make_path_move(l2)
@@ -304,10 +304,10 @@ class snake_game:
                 path.DFS(tail_x, tail_y, self.G)
 
                 if self.have_path(self.X[0][0]/10, self.X[0][1]/10, self.G):
-                    step = self.make_one_move(self.G, self.X, 1)
+                    step = self.make_one_move(self.G, self.X[0][0]/BLOCK_SIZE,self.X[0][1]/BLOCK_SIZE, 1)
                 else:
 
-                    step = self.make_possible_move()
+                    step = self.make_possible_move(self.X[0][0]/BLOCK_SIZE,self.X[0][1]/BLOCK_SIZE)
                 self.move_UI(step)
 
     def make_path_move(self, l):
@@ -321,7 +321,7 @@ class snake_game:
             if not self.is_dead():
                 self.move_UI(step)
 
-    def make_one_move(self, G, snake, choice):
+    def make_one_move(self, G, x,y, choice):
         '''
         走出路径l的第一步，choice=0为最短路径第一步，choice=1为最长路径第一步。返回这一步，其中-1代表左；1代表右；-2代表下；2代表上
         :param l:
@@ -330,32 +330,32 @@ class snake_game:
         direct = 0
         if choice == 0:
             min = UNDEFINED
-            if path.is_free(snake[0][0]/BLOCK_SIZE - 1,snake[0][1]/BLOCK_SIZE,G) and (G[snake[0][1]/BLOCK_SIZE][snake[0][0]/BLOCK_SIZE - 1] < min):
+            if path.is_free(x - 1,y,G) and G[y][x - 1] < min:
                 direct = -1
-                min = G[snake[0][1]/BLOCK_SIZE][snake[0][0]/BLOCK_SIZE - 1]
-            if path.is_free(snake[0][0]/BLOCK_SIZE + 1,snake[0][1]/BLOCK_SIZE,G) and G[snake[0][1]/BLOCK_SIZE][snake[0][0]/BLOCK_SIZE + 1] < min:
+                min = G[y][x - 1]
+            if path.is_free(x + 1,y,G) and G[y][x+ 1] < min:
                 direct = 1
-                min = G[snake[0][1]/BLOCK_SIZE][snake[0][0]/BLOCK_SIZE + 1]
-            if path.is_free(snake[0][0]/BLOCK_SIZE,snake[0][1]/BLOCK_SIZE - 1,G) and G[snake[0][1]/BLOCK_SIZE - 1][snake[0][0]/BLOCK_SIZE] < min:
+                min = G[y][x + 1]
+            if path.is_free(x,y - 1,G) and G[y - 1][x] < min:
                 direct = -2
-                min = G[snake[0][1]/BLOCK_SIZE-1][snake[0][0]/BLOCK_SIZE]
-            if path.is_free(snake[0][0]/BLOCK_SIZE,snake[0][1]/BLOCK_SIZE + 1,G) and G[snake[0][1]/BLOCK_SIZE + 1][snake[0][0]/BLOCK_SIZE] < min:
+                min = G[y-1][x]
+            if path.is_free(x,y + 1,G) and G[y + 1][x] < min:
                 direct = 2
-                min = G[snake[0][1]/BLOCK_SIZE+1][snake[0][0]/BLOCK_SIZE]
+                min = G[y+1][x]
         else:
             max = -1
-            if path.is_free(snake[0][0]/BLOCK_SIZE - 1,snake[0][1]/BLOCK_SIZE,G) and G[snake[0][1]/BLOCK_SIZE][snake[0][0]/BLOCK_SIZE - 1] > max and G[snake[0][1]/BLOCK_SIZE][snake[0][0]/BLOCK_SIZE - 1] < UNDEFINED:
+            if path.is_free(x - 1,y,G) and G[y][x - 1] > max and G[y][x - 1] < UNDEFINED:
                 direct = -1
-                max = G[snake[0][1]/BLOCK_SIZE][snake[0][0]/BLOCK_SIZE - 1]
-            if path.is_free(snake[0][0]/BLOCK_SIZE + 1,snake[0][1]/BLOCK_SIZE,G) and G[snake[0][1]/BLOCK_SIZE][snake[0][0]/BLOCK_SIZE + 1] > max and G[snake[0][1]/BLOCK_SIZE][snake[0][0]/BLOCK_SIZE + 1] < UNDEFINED:
+                max = G[y][x - 1]
+            if path.is_free(x + 1,y,G) and G[y][x + 1] > max and G[y][x + 1] < UNDEFINED:
                 direct = 1
-                max = G[snake[0][1]/BLOCK_SIZE][snake[0][0]/BLOCK_SIZE + 1]
-            if path.is_free(snake[0][0]/BLOCK_SIZE,snake[0][1]/BLOCK_SIZE - 1,G) and G[snake[0][1]/BLOCK_SIZE - 1][snake[0][0]/BLOCK_SIZE] > max and G[snake[0][1]/BLOCK_SIZE - 1][snake[0][0]/BLOCK_SIZE] < UNDEFINED:
+                max = G[y][x + 1]
+            if path.is_free(x,y - 1,G) and G[y - 1][x] > max and G[y - 1][x] < UNDEFINED:
                 direct = -2
-                max = G[snake[0][1]/BLOCK_SIZE-1][snake[0][0]/BLOCK_SIZE]
-            if path.is_free(snake[0][0]/BLOCK_SIZE,snake[0][1]/BLOCK_SIZE + 1,G) and G[snake[0][1]/BLOCK_SIZE + 1][snake[0][0]/BLOCK_SIZE] > max and G[snake[0][1]/BLOCK_SIZE + 1][snake[0][0]/BLOCK_SIZE] < UNDEFINED:
+                max = G[y-1][x]
+            if path.is_free(x,y + 1,G) and G[y + 1][x] > max and G[y + 1][x] < UNDEFINED:
                 direct = 2
-                max = G[snake[0][1]/BLOCK_SIZE+1][snake[0][0]/BLOCK_SIZE]
+                max = G[y+1][x]
         return direct
 
     def move_UI(self,step):
@@ -394,7 +394,7 @@ class snake_game:
         self.bg.update()
 
 
-    def make_possible_move(self):
+    def make_possible_move(self,x,y):
         '''
         在没有可选路径的时候，尝试走出一步，返回这一步
         :return:
@@ -403,18 +403,18 @@ class snake_game:
         G=copy.deepcopy(self.G)
         min = UNDEFINED
         direct = 0
-        if path.is_free(snake[0][0]/BLOCK_SIZE - 1,snake[0][1]/BLOCK_SIZE,G):
+        if path.is_free(x - 1,y,G):
             direct = -1
-            min = G[snake[0][1]/BLOCK_SIZE][snake[0][0]/BLOCK_SIZE - 1]
-        elif path.is_free(snake[0][0]/BLOCK_SIZE + 1,snake[0][1]/BLOCK_SIZE,G):
+            min = G[y][x - 1]
+        elif path.is_free(x + 1,y,G):
             direct = 1
-            min = G[snake[0][1]/BLOCK_SIZE][snake[0][0]/BLOCK_SIZE + 1]
-        elif path.is_free(snake[0][0]/BLOCK_SIZE,snake[0][1]/BLOCK_SIZE - 1,G):
+            min = G[y][x + 1]
+        elif path.is_free(x,y - 1,G):
             direct = -2
-            min = G[snake[0][1]/BLOCK_SIZE - 1][snake[0][0]/BLOCK_SIZE]
-        elif path.is_free(snake[0][0]/BLOCK_SIZE,snake[0][1]/BLOCK_SIZE + 1,G):
+            min = G[y - 1][x]
+        elif path.is_free(x,y + 1,G):
             direct = 2
-            min = G[snake[0][1]/BLOCK_SIZE +1][snake[0][0]/BLOCK_SIZE]
+            min = G[y +1][x]
         return direct
 
     def have_path(self, target_x, target_y,G):
@@ -439,3 +439,4 @@ if __name__ == '__main__':
     snake_game = snake_game()
     #这里接受的参数为游戏模式（1为手动模式，2为AI模式）:
     snake_game.main(2)
+
