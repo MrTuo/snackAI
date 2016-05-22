@@ -353,6 +353,7 @@ class snake_game:
             if path.is_free(x,y + 1,G) and G[y + 1][x] < min:
                 direct = 2
                 min = G[y+1][x]
+        ##在走较长路径的时候，每次不到考察邻节点的大小，而且考察邻接节点周围最大节点的大小，这样保证蛇在走向蛇尾时尽可能多的填充空间
         else:
             max = -2
             temp_G = copy.deepcopy(G)
