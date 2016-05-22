@@ -17,17 +17,17 @@ class snake_game:
         self.direct = "left"
         self.dead = False
         self.eatten = False
-        self.speed = 0
+        self.speed = 200
         # step_count用于统计蛇走过的步数，主要用于为每个蛇身小方块设置唯一的tag
         # 下面两个tag分别记录蛇头和蛇尾小方块的tag。
         self.step_conut = 0
         self.head_tag = 2
         self.tail_tag = 0
 
-        self.food_x=FIELD_WIDTH - 3 * BLOCK_SIZE
-        self.food_y=FIELD_HEIGHT -3 * BLOCK_SIZE
+        self.snake_x=FIELD_WIDTH - 3 * BLOCK_SIZE
+        self.snake_y=FIELD_HEIGHT -3 * BLOCK_SIZE
 
-        self.snake_x = self.snake_y = 3 * BLOCK_SIZE
+        self.food_x = self.food_y = 3 * BLOCK_SIZE
         # 分数
         self.score = 0
         # 蛇身长度
@@ -134,7 +134,7 @@ class snake_game:
         self.bg.delete("snake")
         self.bg.delete("food")
         self.over = self.bg.create_text((FIELD_WIDTH / 2 - BLOCK_SIZE * 2, FIELD_WIDTH / 3 + 2 * BLOCK_SIZE),
-                                        text="           Game Over!\n         Your score is "
+                                        text="           Game Over!\n             Score: "
                                              + str(self.score) + "\n\n", font='Helvetica -30 bold')
 
     '''Module 模块'''
@@ -193,25 +193,17 @@ class snake_game:
     '''自动游戏&手动游戏'''
     # 手动游戏函数
     def normal_play(self):
-        G = [[UNDEFINED for col in range(WD + 1)] for row in range(HT + 1)]
-        for i in range(2, HT/2):
-            G[i][5] = -1
-        for i in range(2, WD/2):
-            G[2][i] = -1
-            G[4][i] = -1
-        tag = [[0 for col in range(WD + 1)] for row in range(HT + 1)]
         while self.dead == False:
-            for i in range(1, 200):
-                G = path.DFS(10, 10, G)
             self.change_X()
             self.draw_snake()
             self.is_eatten()
             if self.eatten == True:
                 self.get_random_food()
                 self.draw_food()
+                self.score+=1
                 self.score_label()
             self.is_dead()
-            # self.bg.after(self.speed)
+            self.bg.after(self.speed)
             self.bg.update()
         else:
             self.draw_gameover()
@@ -439,5 +431,5 @@ class snake_game:
 if __name__ == '__main__':
     snake_game = snake_game()
     #这里接受的参数为游戏模式（1为手动模式，2为AI模式）:
-    snake_game.main(2)
+    snake_game.main(1)
 
