@@ -246,7 +246,7 @@ class snake_game:
         # 还没有吃到食物
         while v_X[0][0] != self.food_x or v_X[0][1] != self.food_y:
             # 走出一步，加入到l1，更新G
-            step=self.make_one_move(v_G, v_X[0][0],v_X[0][1], 0)
+            step=self.make_one_move(v_G, v_X[0][0]/BLOCK_SIZE,v_X[0][1]/BLOCK_SIZE, 0)
             l1.append(step)
             if step == -1:#修改虚拟蛇身数组
                 v_X.insert(0, [v_X[0][0] - BLOCK_SIZE, v_X[0][1]])
@@ -260,17 +260,17 @@ class snake_game:
                 print "direction wrong in make_one_move"
             if v_X[0][0] != self.food_x or v_X[0][1] != self.food_y:
                 v_X.pop();
-            self.init_G(self.food_x/10,self.food_y/10, v_X, v_G)
-            path.DFS(self.food_x/10,self.food_y/10,  v_G)
+            self.init_G(self.food_x/BLOCK_SIZE,self.food_y/BLOCK_SIZE, v_X, v_G)
+            path.DFS(self.food_x/BLOCK_SIZE,self.food_y/BLOCK_SIZE,  v_G)
 
         # 此时已经到达食物位置
         # 获取蛇尾坐标
-        tail_x, tail_y = v_X[-1][0] / 10, v_X[-1][1] / 10
+        tail_x, tail_y = v_X[-1][0] /BLOCK_SIZE, v_X[-1][1] /BLOCK_SIZE
         self.init_G(self.food_x/10,self.food_y/10, v_X, v_G)
         v_G[self.food_y/10][self.food_x/10]=-1;#暂时将食物变成蛇身
         v_G[tail_y][tail_x]=0;
         path.DFS( tail_x,tail_y, v_G)
-        if self.have_path(v_X[0][0]/10,v_X[0][1]/10, v_G):
+        if self.have_path(v_X[0][0]/BLOCK_SIZE,v_X[0][1]/BLOCK_SIZE, v_G):
             return l1
         else:
             return []
@@ -287,7 +287,7 @@ class snake_game:
             target = 0
             self.init_G(self.food_x/10,self.food_y/10, self.X,self.G)
             path.DFS( self.food_x/10,self.food_y/10, self.G)
-            if self.have_path(self.X[0][0]/10, self.X[0][1]/10,self.G):
+            if self.have_path(self.X[0][0]/BLOCK_SIZE, self.X[0][1]/BLOCK_SIZE,self.G):
                 l2 = self.virtual_play_path()
                 if l2:
                     self.make_path_move(l2)
@@ -304,10 +304,10 @@ class snake_game:
                 path.DFS(tail_x, tail_y, self.G)
 
                 if self.have_path(self.X[0][0]/10, self.X[0][1]/10, self.G):
-                    step = self.make_one_move(self.G, self.X[0][0],self.X[0][1], 1)
+                    step = self.make_one_move(self.G, self.X[0][0]/BLOCK_SIZE,self.X[0][1]/BLOCK_SIZE, 1)
                 else:
 
-                    step = self.make_possible_move(self.X[0][0],self.X[0][1])
+                    step = self.make_possible_move(self.X[0][0]/BLOCK_SIZE,self.X[0][1]/BLOCK_SIZE)
                 self.move_UI(step)
 
     def make_path_move(self, l):
@@ -455,3 +455,4 @@ if __name__ == '__main__':
     snake_game = snake_game()
     #这里接受的参数为游戏模式（1为手动模式，2为AI模式）:
     snake_game.main(2)
+
