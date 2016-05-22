@@ -321,22 +321,6 @@ class snake_game:
             if not self.is_dead():
                 self.move_UI(step)
 
-    def get_max_free_around(x,y,G):
-        max = -1
-        if path.is_free(x - 1,y,G) and G[y][x - 1] > max and G[y][x - 1] < UNDEFINED:
-            direct = -1
-            max = G[y][x - 1]
-        if path.is_free(x + 1,y,G) and G[y][x + 1] > max and G[y][x + 1] < UNDEFINED:
-            direct = 1
-            max = G[y][x + 1]
-        if path.is_free(x,y - 1,G) and G[y - 1][x] > max and G[y - 1][x] < UNDEFINED:
-            direct = -2
-            max = G[y-1][x]
-        if path.is_free(x,y + 1,G) and G[y + 1][x] > max and G[y + 1][x] < UNDEFINED:
-            direct = 2
-            max = G[y+1][x]
-        return direct
-
     def make_one_move(self, G, x,y, choice):
         '''
         走出路径l的第一步，choice=0为最短路径第一步，choice=1为最长路径第一步。返回这一步，其中-1代表左；1代表右；-2代表下；2代表上
@@ -362,7 +346,7 @@ class snake_game:
             max = -1
             if path.is_free(x - 1,y,G) and G[y][x - 1] > max and G[y][x - 1] < UNDEFINED:
                 direct = -1
-            max = G[y][x - 1]
+                max = G[y][x - 1]
             if path.is_free(x + 1,y,G) and G[y][x + 1] > max and G[y][x + 1] < UNDEFINED:
                 direct = 1
                 max = G[y][x + 1]
