@@ -20,7 +20,7 @@
 
 整理上述问题，设计如下流程：
 
-![image](https://github.com/MrTuo/snakeAI/edit/master/img/p6.PNG)
+![image](https://github.com/MrTuo/snakeAI/edit/master/img/p6.jpg)
 
 可以简要证明：蛇是永远不死的。因为一开始场地空旷，蛇头到蛇尾必有路，随后蛇只会处于两种状态：走向食物或者走向蛇尾。走向食物的前提是吃到食物后，到蛇尾有路，那么当前状态到蛇尾必有路。走向蛇尾到蛇尾显然有路。故蛇头到蛇尾始终有路，那么蛇必然不会死。
 
