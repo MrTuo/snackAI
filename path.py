@@ -33,7 +33,7 @@ def is_free(x, y, G):
     return False
 
 
-def DFS(x, y, G):
+def BFS(x, y, G):
     global WD, HT
     stack = Queue()
     tmp_x = tmp_y = 0
